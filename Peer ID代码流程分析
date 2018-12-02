@@ -1,0 +1,32 @@
+ipfs  generate peer id流程代码分析
+/root/go/src/github.com/ipfs/go-ipfs/cmd/ipfs/init.go,包含下面go-ipfs-config包，调用该包init()函数实现的
+/go/src/gx/ipfs/QmXctaABKwgzmQgNM4bucMJf7zJnxxvhmPM1Pw95dxUfB5/go-ipfs-config/init.go
+Init(out, nBitsForKeypair)      //out标准输出，bit=2048
+	-->identityConfig(out, nBitsForKeypair) //后面详细介绍
+	-->DefaultBootstrapPeers()                                    //bootstrap_peers.go
+		-->ParseBootstrapPeers(DefaultBootstrapAddresses)          //bootstrap_peers.go
+    -->go on
+
+==============identityConfig=======================
+const MaxInlineKeyLength = 42
+ipfs default "sha2-256"(0x12)
+===================================================
+/root/go/src/gx/ipfs/QmNiJiXwWE3kRhZrC5ej3kSjWHm337pYfhjLGSCDNKJP2s/go-libp2p-crypto/init.go
+identityConfig()-->
+	//in file /root/go/src/gx/ipfs/QmNiJiXwWE3kRhZrC5ej3kSjWHm337pYfhjLGSCDNKJP2s/go-libp2p-crypto/
+	//GenerateRSAKeyPair generates a new rsa private and public key
+	-->ci.GenerateKeyPair(ci.RSA, nbits)                       //key.go
+		-->GenerateKeyPairWithReader(typ, bits, rand.Reader)   //key.go
+			-->GenerateRSAKeyPair(bits, src)                   //rsa.go
+			
+	-->ident.PrivKey = base64.StdEncoding.EncodeToString(skbytes)   //init.go
+	-->id, err := peer.IDFromPublicKey(pk)                          //init.go
+		///root/go/src/gx/ipfs/QmerPMzPk1mJVowm8KgmoknWa4yCYvvugMPsgWmDNUvDLW/go-multihash
+		-->hash, _ := mh.Sum(b, alg, -1)  //public key,sha2-256 in file sum.go
+			--> d = sumSHA256(data)  //code=0x12    return a[0:32]
+			--> Encode(d, code) // in file multihash.go
+		
+	// Pretty returns a b58-encoded string of the ID
+	//func (id ID) Pretty() string {}
+	-->ident.PeerID = id.Pretty() //base58编码成peer id：Qm...
+	-->return ident, nil  //函数结束
